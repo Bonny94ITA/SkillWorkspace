@@ -1,20 +1,42 @@
-# Bootstrap di ripiego (Metodo B)
+# Bootstrap per nuovo progetto (sessione cloud, anche senza clone locale)
 
-Da usare SOLO sui progetti dove non vuoi/puoi committare `.claude/settings.json`.
-Incolla questo come **primo prompt** della sessione web. NON persiste: va rifatto
-ogni sessione. La via consigliata e' invece il `.claude/settings.json` committato
-(vedi `README.md`).
+Da incollare come **primo prompt** in una sessione Claude Code on the web aperta
+su un progetto qualsiasi. Non richiede che il progetto esista in locale su
+questo Mac: Claude lo fa direttamente dentro la sandbox cloud.
 
----
-
-Aggiungi il mio marketplace di skill personale e abilita il plugin, poi conferma
-quali skill sono disponibili:
-
-/plugin marketplace add Bonny94ITA/SkillWorkspace
-/plugin install workspace-skills@skillworkspace
+Copia/incolla questo blocco (sostituisci la lista skill se vuoi solo un
+sottoinsieme — i nomi sono le cartelle in `plugins/workspace-skills/skills/`
+di https://github.com/Bonny94ITA/SkillWorkspace):
 
 ---
 
-Note:
-- Sostituisci `Bonny94ITA/SkillWorkspace` se il repo e' su un altro account/nome.
-- Se il repo e' privato, la sessione deve avere accesso in lettura (auth git/gh).
+Importa le skill condivise dal mio repo di skill in questo progetto:
+
+1. Clona con sparse-checkout solo le skill, in una cartella temporanea:
+   ```
+   git clone --depth 1 --filter=blob:none --sparse https://github.com/Bonny94ITA/SkillWorkspace.git /tmp/skillworkspace
+   cd /tmp/skillworkspace && git sparse-checkout set plugins/workspace-skills/skills
+   ```
+2. Copia tutte le cartelle skill dentro `/tmp/skillworkspace/plugins/workspace-skills/skills/`
+   in `.claude/skills/` di questo progetto (crea la cartella se non esiste).
+   Sovrascrivi eventuali skill omonime, non toccare altre skill custom gia' presenti.
+3. Rimuovi `/tmp/skillworkspace`.
+4. Fai commit di `.claude/skills/` con un messaggio chiaro e procedi secondo il
+   tuo workflow normale (branch + PR, o commit diretto se hai i permessi).
+
+---
+
+## Perche' questo metodo (e non il plugin marketplace)
+
+Le sessioni Claude Code on the web sono sandbox isolate per singolo repo: non
+auto-installano marketplace di plugin esterni (testato: `extraKnownMarketplaces`,
+hook `SessionStart` con `claude plugin install`, e la pagina account
+Settings -> Plugins falliscono tutti nel caricare le skill nella sandbox — la
+pagina Plugins serve solo Chat/Cowork, non Claude Code). L'unico metodo che
+carica davvero le skill in una sessione cloud e' avere i file `SKILL.md` **dentro
+il repo** in `.claude/skills/`. Vedi `README.md` per i dettagli.
+
+## Variante: solo alcune skill
+
+Nel punto 2, copia solo le cartelle che ti servono, ad esempio solo
+`seo`, `accessibility`, `core-web-vitals` per un progetto web.
