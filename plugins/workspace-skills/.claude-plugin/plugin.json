@@ -1,0 +1,8 @@
+{
+  "name": "workspace-skills",
+  "description": "Skill e contesto condivisi caricati in ogni sessione su qualunque progetto.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Giacomo Bonazzi"
+  }
+}

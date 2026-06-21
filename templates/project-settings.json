@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "skillworkspace": {
+      "source": {
+        "source": "github",
+        "repo": "Bonny94ITA/SkillWorkspace"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "workspace-skills@skillworkspace": true
+  }
+}

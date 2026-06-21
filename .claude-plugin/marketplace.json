@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "skillworkspace",
+  "owner": {
+    "name": "Giacomo Bonazzi",
+    "email": "bonazzigiacomo@yahoo.it"
+  },
+  "description": "Catalogo personale di skill riusabili. Una sola fonte di verita: ogni progetto reale la abilita via .claude/settings.json e si porta dietro queste skill automaticamente.",
+  "plugins": [
+    {
+      "name": "workspace-skills",
+      "source": "./plugins/workspace-skills",
+      "description": "Skill e contesto condivisi caricati in ogni sessione su qualunque progetto."
+    }
+  ]
+}
