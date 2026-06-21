@@ -67,6 +67,21 @@ di 6 righe per progetto e una sola fonte di verita' per le skill.
 2. `git commit` + `git push`.
 3. Nei progetti: `/plugin marketplace update` (o avvia una nuova sessione).
 
+### Sync dalle skill installate in locale
+
+Le skill sotto `plugins/workspace-skills/skills/` sono uno **snapshot** copiato
+dalla install locale `~/.agents/skills` (skills.sh). Per rinfrescarle all'ultima
+versione upstream:
+
+```bash
+bash scripts/sync-skills.sh
+git add -A && git commit -m "Sync skills" && git push
+```
+
+Lo script ricopia solo il set curato elencato al suo interno (`SKILLS=(...)`):
+modifica quella lista per aggiungere/togliere skill. Nota: lo snapshot **non**
+si aggiorna da solo quando skills.sh cambia l'originale — devi rilanciare il sync.
+
 ## Validare
 
 ```bash
