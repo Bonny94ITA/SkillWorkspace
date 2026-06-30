@@ -41,8 +41,6 @@ plugins/workspace-skills/skills/<nome>/SKILL.md   # fonte di verità delle skill
 scripts/refresh-from-registry.sh   # refresh dal registry skills.sh (cloud/locale)
 scripts/sources.txt                # mappa owner/repo delle sorgenti
 scripts/add-hook.sh                # onboarda una repo con il SessionStart hook
-scripts/sync-skills.sh             # refresh dalla install locale ~/.agents/skills
-scripts/inject-skills.sh           # copia one-shot delle skill in un progetto locale
 templates/sync-skills-hook.sh      # template canonico dell'hook
 templates/bootstrap-prompt.md      # iniezione via sessione cloud, senza clone locale
 ```
@@ -66,11 +64,6 @@ repo si auto-allinea a ogni sessione.
 **Rinfrescare la fonte di verità dal registry**
 ```bash
 bash scripts/refresh-from-registry.sh   # in cloud lo fa già la routine settimanale
-```
-
-**Iniezione one-shot in un progetto locale** (senza hook)
-```bash
-bash scripts/inject-skills.sh /percorso/progetto [skill...]
 ```
 
 ## Note

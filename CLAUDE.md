@@ -10,10 +10,8 @@ flusso automatico nel README.
 
 ```
 plugins/workspace-skills/skills/<nome>/SKILL.md   # fonte di verita' delle skill
-scripts/sync-skills.sh        # refresh da ~/.agents/skills (skills.sh) locale
 scripts/refresh-from-registry.sh # refresh dal registry skills.sh (npx), funziona in cloud
 scripts/sources.txt           # elenco sorgenti owner/repo per refresh-from-registry.sh
-scripts/inject-skills.sh      # copia le skill in un progetto locale
 scripts/add-hook.sh           # onboarda una repo: installa il SessionStart hook
 templates/sync-skills-hook.sh # template canonico dell'hook (installato da add-hook.sh)
 templates/bootstrap-prompt.md # iniezione via sessione cloud, senza clone locale
@@ -22,11 +20,9 @@ templates/bootstrap-prompt.md # iniezione via sessione cloud, senza clone locale
 ## Workflow
 
 - Modificare/aggiungere skill: editare sotto `plugins/workspace-skills/skills/`, commit, push.
-- Rinfrescare dall'install locale skills.sh: `bash scripts/sync-skills.sh`.
 - Rinfrescare dal registry (anche in cloud): `bash scripts/refresh-from-registry.sh`.
-- Propagare a un progetto locale: `bash scripts/inject-skills.sh /path/progetto [skill...]`.
+- Onboardare una repo (nuova o esistente): `bash scripts/add-hook.sh /path/repo`, poi commit/push nella repo.
 - Propagare a una sessione cloud senza clone locale: incollare `templates/bootstrap-prompt.md`.
-- Onboardare una nuova repo (o una esistente): `bash scripts/add-hook.sh /path/repo`, poi commit/push nella repo.
 
 ## Allineamento automatico
 
