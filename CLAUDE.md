@@ -1,10 +1,10 @@
 # SkillWorkspace
 
 Catalogo personale di skill riusabili per Claude Code. Fonte di verita':
-`plugins/workspace-skills/skills/`. Si propaga ai progetti reali **copiando
-file** in `.claude/skills/`, non via plugin marketplace (testato: non
-funziona nelle sessioni cloud — vedi README per i dettagli e i link ai bug/doc
-che lo confermano).
+`plugins/workspace-skills/skills/`. Si mantiene fresca dal registry skills.sh e
+si propaga ai progetti **copiando file** in `.claude/skills/` (non via plugin
+marketplace, che in cloud non carica le skill — vedi README). Dettagli del
+flusso automatico nel README.
 
 ## Struttura
 
@@ -14,6 +14,8 @@ scripts/sync-skills.sh        # refresh da ~/.agents/skills (skills.sh) locale
 scripts/refresh-from-registry.sh # refresh dal registry skills.sh (npx), funziona in cloud
 scripts/sources.txt           # elenco sorgenti owner/repo per refresh-from-registry.sh
 scripts/inject-skills.sh      # copia le skill in un progetto locale
+scripts/add-hook.sh           # onboarda una repo: installa il SessionStart hook
+templates/sync-skills-hook.sh # template canonico dell'hook (installato da add-hook.sh)
 templates/bootstrap-prompt.md # iniezione via sessione cloud, senza clone locale
 ```
 
@@ -24,6 +26,7 @@ templates/bootstrap-prompt.md # iniezione via sessione cloud, senza clone locale
 - Rinfrescare dal registry (anche in cloud): `bash scripts/refresh-from-registry.sh`.
 - Propagare a un progetto locale: `bash scripts/inject-skills.sh /path/progetto [skill...]`.
 - Propagare a una sessione cloud senza clone locale: incollare `templates/bootstrap-prompt.md`.
+- Onboardare una nuova repo (o una esistente): `bash scripts/add-hook.sh /path/repo`, poi commit/push nella repo.
 
 ## Allineamento automatico
 

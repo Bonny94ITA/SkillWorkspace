@@ -1,90 +1,81 @@
 # SkillWorkspace
 
-Catalogo personale di **skill riusabili** per Claude Code: una sola fonte di
-verità (`plugins/workspace-skills/skills/`) che propaghi nei progetti reali
-con file committati, perché funzioni anche nelle sessioni cloud isolate.
+Catalogo personale di **skill riusabili** per Claude Code. Una sola fonte di
+verità — `plugins/workspace-skills/skills/` — che si mantiene aggiornata dal
+registry [skills.sh](https://www.skills.sh) e si propaga ai progetti reali
+copiando i file in `.claude/skills/`.
 
-## Il problema che risolve
+## Come funziona
 
-Una sessione Claude Code on the web e' una sandbox isolata per **un solo
-repository** (il progetto reale, che cambia spesso). All'avvio carica solo
-cio' che e' committato in quella repo. Non eredita il tuo `~/.claude` o
-`~/.agents/skills` locali.
-
-## Perche' NON il plugin marketplace (testato, non funziona)
-
-Sembrerebbe il meccanismo nativo giusto, e infatti e' stato il primo tentativo
-di questo repo — ma **non funziona per le sessioni cloud di Claude Code**,
-verificato empiricamente su piu' fronti:
-
-- `extraKnownMarketplaces` + `enabledPlugins` in `.claude/settings.json` → non si
-  auto-installa (nessun trust prompt nel cloud headless).
-- Hook `SessionStart` che lancia `claude plugin marketplace add` + `install` →
-  il marketplace si registra e il plugin si installa in cache, ma le skill non
-  vengono **caricate** nella sessione (confermato anche da un bug noto upstream:
-  [anthropics/claude-code#23910](https://github.com/anthropics/claude-code/issues/23910),
-  validazione che esclude i marketplace custom da `getPluginSkills()`).
-- Account Settings → Plugins/Skills (UI di claude.ai) → distribuisce a **Chat**
-  e **Cowork**, non a Claude Code: per design non raggiunge le sessioni di
-  coding. Vedi la [doc ufficiale](https://support.claude.com/en/articles/13837433-manage-plugins-for-your-organization).
-
-Quindi niente submodule (Metodo A, fragile per-progetto) e niente marketplace
-(DRY ma non funziona nel cloud). L'unico metodo verificato che carica le skill
-in una sessione cloud e' committare i file `SKILL.md` **dentro il repo**, in
-`.claude/skills/`.
-
-## Come usarlo
-
-### Lavori da questo Mac, progetto gia' clonato in locale
-
-```bash
-bash scripts/inject-skills.sh /percorso/progetto              # tutte le skill curate
-bash scripts/inject-skills.sh /percorso/progetto seo accessibility   # solo alcune
+```
+                 skills.sh (npx skills)
+                         │  refresh settimanale (cloud) → PR
+                         ▼
+   plugins/workspace-skills/skills/   ← FONTE DI VERITÀ (questo repo)
+                         │  SessionStart hook, ad ogni sessione
+                         ▼
+   repo operativa/.claude/skills/     ← si aggiorna quando ci lavori
 ```
 
-Copia i file in `<progetto>/.claude/skills/`. Poi nel progetto:
+Due meccanismi automatici, una sola cosa da curare a mano (le skill qui dentro):
 
-```bash
-git add .claude/skills && git commit -m "Add shared skills" && git push
+1. **Registry → fonte di verità.** Una routine settimanale in cloud lancia
+   `scripts/refresh-from-registry.sh`, che reinstalla le sorgenti elencate in
+   `scripts/sources.txt` via `npx skills` e apre una PR se trova skill non
+   allineate. Funziona senza il Mac.
+2. **Fonte di verità → repo operativa.** Ogni progetto ha un `SessionStart`
+   hook che, a ogni avvio sessione (cloud o locale), ricopia le skill da questo
+   repo in `.claude/skills/`. La repo operativa si aggiorna quando ci si lavora,
+   non a vuoto.
+
+> **Perché file committati e non il plugin marketplace.** Nelle sessioni cloud
+> di Claude Code il marketplace non carica le skill (verificato; vedi
+> [claude-code#23910](https://github.com/anthropics/claude-code/issues/23910)).
+> L'unico metodo che le carica davvero è avere i `SKILL.md` committati in
+> `.claude/skills/` — ed è quello che fa l'hook.
+
+## Struttura
+
+```
+plugins/workspace-skills/skills/<nome>/SKILL.md   # fonte di verità delle skill
+scripts/refresh-from-registry.sh   # refresh dal registry skills.sh (cloud/locale)
+scripts/sources.txt                # mappa owner/repo delle sorgenti
+scripts/add-hook.sh                # onboarda una repo con il SessionStart hook
+scripts/sync-skills.sh             # refresh dalla install locale ~/.agents/skills
+scripts/inject-skills.sh           # copia one-shot delle skill in un progetto locale
+templates/sync-skills-hook.sh      # template canonico dell'hook
+templates/bootstrap-prompt.md      # iniezione via sessione cloud, senza clone locale
 ```
 
-### Sessione cloud su un progetto che non hai in locale
+## Operazioni comuni
 
-Incolla come primo prompt il contenuto di
-[`templates/bootstrap-prompt.md`](templates/bootstrap-prompt.md): fa fare a
-Claude, dentro la sandbox, un clone sparse + copia + commit, senza toccare
-questo Mac.
+**Aggiungere / modificare una skill**
+1. Edita `plugins/workspace-skills/skills/<nome>/SKILL.md`, commit, push.
+2. Se viene da una sorgente skills.sh, aggiungi `owner/repo` a `scripts/sources.txt`
+   (così la routine la tiene aggiornata). Altrimenti resta gestita a mano.
 
-## Aggiungere / modificare skill
-
-1. Crea `plugins/workspace-skills/skills/<nome>/SKILL.md` (frontmatter `name` + `description`).
-2. `git commit` + `git push`.
-3. Ripropaga ai progetti che la usano con `scripts/inject-skills.sh` (o il bootstrap cloud).
-
-### Sync dalle skill installate in locale
-
-Le skill sotto `plugins/workspace-skills/skills/` sono uno **snapshot** copiato
-dalla install locale `~/.agents/skills` (skills.sh). Per rinfrescarle:
-
+**Onboardare una repo (nuova o esistente)**
 ```bash
-bash scripts/sync-skills.sh
-git add -A && git commit -m "Sync skills" && git push
+bash scripts/add-hook.sh /percorso/della/repo
+# poi, dentro quella repo:
+git add .claude && git commit -m "Add skills sync hook" && git push
+```
+Installa l'hook (merge sicuro se esiste già un `settings.json`). Da lì in poi la
+repo si auto-allinea a ogni sessione.
+
+**Rinfrescare la fonte di verità dal registry**
+```bash
+bash scripts/refresh-from-registry.sh   # in cloud lo fa già la routine settimanale
 ```
 
-Poi ripropaga ai progetti con `scripts/inject-skills.sh`. Lo script ricopia
-solo il set curato elencato al suo interno (`SKILLS=(...)`): modifica quella
-lista per aggiungere/togliere skill. Lo snapshot **non** si aggiorna da solo
-quando skills.sh cambia l'originale — devi rilanciare il sync.
-
-## Nota sulla "freschezza"
-
-Non c'e' propagazione automatica: ogni progetto ha una **copia** fissata al
-momento dell'iniezione. Quando aggiorni una skill qui, i progetti che la usano
-restano alla versione vecchia finche' non rilanci `inject-skills.sh` (o il
-bootstrap) su ciascuno. E' il costo del metodo che funziona davvero nel cloud.
+**Iniezione one-shot in un progetto locale** (senza hook)
+```bash
+bash scripts/inject-skills.sh /percorso/progetto [skill...]
+```
 
 ## Note
 
-- Repo: `Bonny94ITA/SkillWorkspace` (pubblico). Se lo rendi privato, sia
-  l'iniezione locale (serve `gh auth`/credenziali git) sia il bootstrap cloud
-  (serve rete autenticata) richiedono accesso in lettura.
+- Repo `Bonny94ITA/SkillWorkspace` (pubblico). Se lo rendi privato, hook,
+  refresh e bootstrap richiedono accesso in lettura autenticato.
+- L'hook clona da `origin`: vede ciò che hai **pushato**, non gli edit locali
+  non committati.
