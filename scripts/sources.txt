@@ -1,0 +1,20 @@
+# Sorgenti skills.sh (npx skills) da cui rinfrescare le skill curate.
+# Una riga per repo nel formato owner/repo. I commenti iniziano con #.
+#
+# La routine settimanale (refresh-from-registry.sh) installa ogni sorgente con
+# `npx skills add` e rispecchia in plugins/workspace-skills/skills/ SOLO le skill
+# gia' presenti li'. Le skill la cui sorgente non e' ancora elencata qui NON
+# vengono toccate (restano allo snapshot committato).
+#
+# Sorgenti confermate (coprono 15 delle 23 skill curate):
+vercel-labs/agent-skills        # vercel-composition-patterns, vercel-react-best-practices,
+                                # vercel-react-native-skills, vercel-react-view-transitions,
+                                # web-design-guidelines
+addyosmani/web-quality-skills   # accessibility, core-web-vitals, performance, seo, web-quality-audit
+mattpocock/skills               # codebase-design, domain-modeling, grilling, improve-codebase-architecture
+vercel-labs/skills              # find-skills
+JuliusBrussee/caveman           # caveman, caveman-commit, caveman-compress, caveman-help,
+                                # caveman-review, caveman-stats, cavecrew
+coreyhaines31/marketingskills   # seo-audit (v2.0.0)
+
+# Tutte le 23 skill curate hanno una sorgente mappata.
