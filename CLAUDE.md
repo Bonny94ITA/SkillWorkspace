@@ -1,10 +1,10 @@
 # SkillWorkspace
 
 Catalogo personale di skill riusabili per Claude Code. Fonte di verita':
-`plugins/workspace-skills/skills/`. Si propaga ai progetti reali **copiando
-file** in `.claude/skills/`, non via plugin marketplace (testato: non
-funziona nelle sessioni cloud — vedi README per i dettagli e i link ai bug/doc
-che lo confermano).
+`plugins/workspace-skills/skills/`. Si mantiene fresca dal registry skills.sh e
+si propaga ai progetti **copiando file** in `.claude/skills/` (non via plugin
+marketplace, che in cloud non carica le skill — vedi README). Dettagli del
+flusso automatico nel README.
 
 ## Struttura
 
