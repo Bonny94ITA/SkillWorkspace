@@ -11,6 +11,8 @@ che lo confermano).
 ```
 plugins/workspace-skills/skills/<nome>/SKILL.md   # fonte di verita' delle skill
 scripts/sync-skills.sh        # refresh da ~/.agents/skills (skills.sh) locale
+scripts/refresh-from-registry.sh # refresh dal registry skills.sh (npx), funziona in cloud
+scripts/sources.txt           # elenco sorgenti owner/repo per refresh-from-registry.sh
 scripts/inject-skills.sh      # copia le skill in un progetto locale
 templates/bootstrap-prompt.md # iniezione via sessione cloud, senza clone locale
 ```
@@ -19,8 +21,20 @@ templates/bootstrap-prompt.md # iniezione via sessione cloud, senza clone locale
 
 - Modificare/aggiungere skill: editare sotto `plugins/workspace-skills/skills/`, commit, push.
 - Rinfrescare dall'install locale skills.sh: `bash scripts/sync-skills.sh`.
+- Rinfrescare dal registry (anche in cloud): `bash scripts/refresh-from-registry.sh`.
 - Propagare a un progetto locale: `bash scripts/inject-skills.sh /path/progetto [skill...]`.
 - Propagare a una sessione cloud senza clone locale: incollare `templates/bootstrap-prompt.md`.
 
-Nessuna propagazione automatica: ogni progetto ha uno snapshot fissato al
-momento dell'iniezione, va ripetuta dopo ogni aggiornamento qui.
+## Allineamento automatico
+
+- **Fonte di verita' -> repo operativa**: ogni progetto ha un `SessionStart`
+  hook (`.claude/hooks/sync-skills.sh`) che a ogni avvio sessione ricopia le
+  skill da questo repo in `.claude/skills/`. La repo operativa si aggiorna
+  quando ci si lavora.
+- **Registry -> fonte di verita'**: una routine settimanale (cloud) lancia
+  `scripts/refresh-from-registry.sh` e apre una PR se trova skill non allineate
+  rispetto a `scripts/sources.txt`. Le skill la cui sorgente non e' ancora in
+  `sources.txt` restano intatte.
+
+Nessuna propagazione "a spinta": la repo operativa cambia solo quando ci si
+lavora, non quando e' inattiva.
