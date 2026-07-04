@@ -16,5 +16,8 @@ vercel-labs/skills              # find-skills
 JuliusBrussee/caveman           # caveman, caveman-commit, caveman-compress, caveman-help,
                                 # caveman-review, caveman-stats, cavecrew
 coreyhaines31/marketingskills   # seo-audit (v2.0.0)
+higgsfield-ai/skills            # higgsfield-generate, higgsfield-marketplace-cards,
+                                # higgsfield-product-photoshoot, higgsfield-soul-id,
+                                # higgsfield-websites
 
-# Tutte le 23 skill curate hanno una sorgente mappata.
+# Tutte le 28 skill curate hanno una sorgente mappata.
