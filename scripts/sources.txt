@@ -6,7 +6,7 @@
 # gia' presenti li'. Le skill la cui sorgente non e' ancora elencata qui NON
 # vengono toccate (restano allo snapshot committato).
 #
-# Sorgenti confermate (coprono 15 delle 23 skill curate):
+# Sorgenti confermate (coprono tutte le 23 skill curate):
 vercel-labs/agent-skills        # vercel-composition-patterns, vercel-react-best-practices,
                                 # vercel-react-native-skills, vercel-react-view-transitions,
                                 # web-design-guidelines
