@@ -1,4 +1,4 @@
-# App flow — `type: "app"` (Higgsfield-integrated, Quanta + HeroUI)
+# App flow — `type: "app"` (Higgsfield-integrated, Quanta)
 
 You are building ONE per-website Cloudflare Worker: a **React 19 + TanStack
 Start** app that is **server-rendered (SSR)** and deploys as a single Worker
@@ -7,7 +7,7 @@ integrated with Higgsfield: its users **Sign in with Higgsfield** and generate
 images/videos through the **fnf SDK**, and the app must look and feel like a
 Higgsfield product — apps render INSIDE Higgsfield, indistinguishable from its
 own tools. There is no independent brand and no wow/marketing pipeline here:
-the craft bar is Quanta's UX-craft rules plus the brand-review self-check.
+the craft bar is Quanta's UX-craft rules.
 
 **Repo layout.** The project lives in **`app/`** — its own `package.json`,
 `src/`, `packages/`, `migrations/`, build config, and the deploy inputs
@@ -20,17 +20,20 @@ there.
   the template. MANDATORY: use its components before writing custom chrome.
   `references/quanta-design.md` is the working guide (tokens, components,
   UX-craft rules, the Higgsfield integration rules); the canonical API
-  reference is `app/packages/quanta/ai/AGENTS.md`.
-- **The five layout scaffolds** (`references/app-layouts.md` +
-  `app/src/layouts/AGENTS.md`) — cinema studio / stepper / simple app (form) /
-  upscaler / shorts studio, each modeled on a live Higgsfield product. Start
-  from the closest; a custom layout is fine when the user asks. The composer,
-  feed, and result cards are BUILT per app from Quanta primitives — the same
-  reference carries their anatomy.
-- **HeroUI fallback** (`references/heroui-fallback.md`) — `@heroui/react` is
-  preinstalled and themed to the brand for components Quanta lacks (date
-  picker, calendar, data table, …). Never where Quanta has the component;
-  never restyled.
+  reference is `app/packages/quanta/ai/AGENTS.md` — RELY ON IT for props/APIs;
+  do NOT open or grep the component `.tsx` source to re-derive prop names.
+- **The six code layouts** (`references/app-layouts.md` +
+  `app/src/layouts/AGENTS.md`) — Studio (`studio.tsx`), Preset (`preset.tsx`),
+  App detail (`app-detail.tsx`), AI Stylist (`ai-stylist.tsx`), Skin Enhancer
+  (`skin-enhancer.tsx`), and Shots (`shots.tsx`), shipped as REAL CODE in the
+  template (not screenshots). Start from the closest one, copy it into your
+  route, and adapt it — build from the code plus the reusable pieces in
+  `app/src/components`, never from a screenshot.
+- **Custom components for gaps** — for anything Quanta lacks (date picker,
+  calendar, data table, …), build a small component from Quanta primitives +
+  `q-` tokens in the app's own `app/src/components/`. Never add a third-party
+  UI library, never edit the vendored `@higgsfield/quanta` package, never
+  restyle a Quanta component (see `references/quanta-design.md` rule 5).
 - **Icons** — Google Material Symbols outlined 400, imported per icon
   (`@material-symbols/svg-400/outlined/<name>.svg?react`). The generate-button
   sparkle is the branded `@/assets/icon-sparkles-soft.svg?react`.
@@ -41,7 +44,8 @@ there.
   old `@higgsfield/fnf/adapters` subpath no longer exists; other adapters live
   in `@higgsfield/fnf-adapters`, which generated apps do not use). Package
   guides are canonical for APIs: `app/packages/fnf/ai/AGENTS.md` and
-  `app/packages/fnf-react/ai/AGENTS.md`.
+  `app/packages/fnf-react/ai/AGENTS.md` — rely on them; do NOT grep the SDK
+  source to re-derive method names/params.
 - **Higgsfield auth** (`references/auth.md`) — the `/api/user` proxy,
   `/__auth/login`/`/__auth/logout`, server-side re-checks. Mandatory for every
   app (see rule 3).
@@ -49,9 +53,6 @@ there.
   `app/app.manifest.json` (rules 4-6; heavy/long-running work:
   `references/containers.md`). Runtime + routing:
   `references/runtime-and-infra.md`. Security: `references/security.md`.
-- **Brand review** (`references/brand-review.md`) — the designer's 7-criteria
-  taste rubric. Run it as a self-review against your rendered screens before
-  delivering; fix confident flags.
 - **Launch cover** (`references/app-cover.md`) — the branded 3:2 cover + OG
   image. REQUIRED before every publish (`og_image_url` +
   `marketplace_cover_url` are mandatory feed-card fields).
@@ -64,8 +65,10 @@ Higgsfield CLI generation commands — never stock, never placeholders.
 
 These come from `references/quanta-design.md` — read it before building:
 
-1. **Never customize Quanta styles** — compose, don't restyle. Rebuild missing
-   small pieces from Quanta primitives; complex gaps go to the HeroUI fallback.
+1. **Never customize Quanta styles, never modify Quanta** — compose, don't
+   restyle. Build anything Quanta lacks as your own small component from Quanta
+   primitives + `q-` tokens in `app/src/components/`; never add a third-party
+   UI library.
 2. **No app header/top bar** — apps render inside Higgsfield; the host chrome
    provides the global header and account controls. Never credits/balance or
    sign-out UI. In-app navigation is a Quanta `Sidebar` or inline controls.
@@ -81,33 +84,76 @@ These come from `references/quanta-design.md` — read it before building:
 
 ## How to build an app
 
+**Plan first, then narrate progress.** Right after intake, post a short plan
+to the user — the screens/features you're about to build, in product terms
+(per the SKILL.md "Talking to the user" rule). As you work, send a one-line
+update whenever a step completes ("Screens are built — wiring up generation
+next", "4 of 6 done") so the user always knows how much work remains. Never
+go silent for a long stretch of the build.
+
+**Read the guides, then BUILD — do not spelunk the package source.** Your whole
+API surface is already written down: `references/app-quickstart.md` (the
+copy-paste critical path — auth, generation submit/poll, result rendering, and
+the common Quanta components — READ IT FIRST), `references/quanta-design.md`
+plus the in-repo `app/packages/quanta/ai/AGENTS.md` for component props/tokens,
+and `references/fnf-sdk.md` + `references/fnf-react.md` (canonical in-repo
+mirrors: `app/packages/fnf/ai/AGENTS.md` and `.../fnf-react/ai/AGENTS.md`) for
+the SDK + hooks. Those guides plus the chosen code layout are ENOUGH to
+build the whole app. **Do NOT open, `cat`, or `grep`
+`app/packages/{quanta,fnf,fnf-react}/src/**`** — every prop and method you need
+is in the guides, and reading package source is the single biggest time sink in
+a build (it also bloats context and slows every later step). If a specific prop
+or field is genuinely missing from a guide, make the reasonable call. Once you
+have read the guides + the chosen code layout, you have enough — start writing.
+
 1. **Intake** (ONE batched round — ask the user only for what the brief doesn't
    answer): confirm `type: "app"` is what the user wants (it is the USER'S
-   choice), what the app does (which generation models/flows), and anything
-   brand-critical. Never a second round — pick sensible defaults and state
-   them.
+   choice), what the app does (which generation models/flows), anything
+   brand-critical, and whether to **publish to the community feed
+   (marketplace)** when ready (remember it for step 8). Never a second round —
+   pick sensible defaults and state them.
 2. **Create** — `higgsfield website create --type app`.
-3. **Plan the screens** — pick the closest layout scaffold in
-   `references/app-layouts.md`; list the screens/states (including first-run/
-   empty state) and the app's own product state for D1.
-4. **Build with Quanta** — copy the scaffold into routes and adapt; compose
-   screens from Quanta components per `references/quanta-design.md`; HeroUI
-   only for gaps. Real copy in every state (empty, busy, error) — no
-   placeholders.
+3. **Plan the screens** — pick the closest of the six code layouts in
+   `app/src/layouts` (studio / preset / app-detail / ai-stylist / skin-enhancer
+   / shots; see `references/app-layouts.md`) and read its code +
+   `app/src/layouts/AGENTS.md`
+   for the composition; list the screens/states (including first-run/empty
+   state) and the app's own product state for D1.
+4. **Build with Quanta** — adapt the chosen code layout using
+   Quanta components per `references/quanta-design.md`. NEVER customize or
+   modify Quanta; when a component doesn't exist or doesn't fit as-is, build a
+   small custom component from Quanta primitives in `app/src/components/`
+   (`quanta-design.md` rule 5). Real copy in every state (empty, busy, error)
+   — no placeholders.
 5. **Wire fnf end-to-end** — auth first (`references/auth.md`), then
    generation/media through server functions per `references/fnf-sdk.md` +
    `references/fnf-react.md`, product state in D1 (rules 3/3a below). Poll
    jobs, render real results.
-6. **Gate** — `bun run typecheck` and `bun run qa:fill -- --strict` must pass;
-   fix every item.
-7. **Deploy the preview** (`higgsfield website deploy <website_id> --env
-   preview`); if you can screenshot the preview (a browser or screenshot tool
-   is available), capture desktop ~1440px and mobile ~390px and run the
-   brand-review self-check (`references/brand-review.md`) against the
-   screenshots — fix confident flags, redeploy once; if you cannot, say the
-   visual review was skipped. Report the preview URL.
-8. **Publish only when asked** — then the publish gate below (cover, og
-   metadata) applies.
+6. **Deploy** (`higgsfield website deploy <website_id>` — this ships the live
+   public site immediately). Report the live URL (from
+   `higgsfield website status`) in product terms, no repo/commit/deploy jargon
+   (see the SKILL.md "Talking to the user" rule).
+7. **Cover + metadata — ALWAYS, as part of building (not just at publish).**
+   Every app ships with a launch cover and filled feed-card metadata. Generate
+   them per `references/app-cover.md`: the branded 3:2 cover + stadium-capsule
+   OG image, then fill `app/src/app-meta.json` — `og_title`, `og_description`,
+   `og_image_url` (the OG file), `marketplace_cover_url` (the plain cover),
+   `favicon_url`. This is NOT optional and NOT gated on the user asking: do it
+   without prompting, the same way you write real copy. (Only the cover VIDEO,
+   `og_video_url`, needs the user's permission — it costs credits.) An app you
+   present as done with an empty cover or empty `og_title` is INCOMPLETE.
+   **Always suggest the cover video:** when you present the finished app (and
+   again at publish), proactively offer a short animated cover for the feed card
+   ("want a short cover video? it makes the feed card play on hover") — suggest
+   it every time, then only generate it if the user says yes
+   (`references/cover-animator.md`).
+8. **Publish.** If the user opted in at intake (step 1), publish automatically
+   once the app is deployed with its cover + metadata filled — run
+   `higgsfield website publish <website_id>` without waiting to be asked, and
+   share the community-feed listing URL it reports. Otherwise publish only when
+   asked. **After a successful publish, suggest entering the $100k app contest**
+   ("want to enter it in the Higgsfield app contest? you'd add a couple of
+   social links") — `higgsfield website contest`, see `references/contest.md`.
 
 ---
 
@@ -115,15 +161,16 @@ These come from `references/quanta-design.md` — read it before building:
 
 | Task | Read |
 |---|---|
+| **START HERE** — the working critical path: auth, generation submit/poll, result rendering, the common Quanta components | **`references/app-quickstart.md`** |
 | fnf SDK: generation jobs, media upload, profile/workspace/credits, adapters | `references/fnf-sdk.md` + `references/auth.md` + `references/runtime-and-infra.md` |
 | React query/cache/controllers for fnf | `references/fnf-react.md` + `references/auth.md` |
-| Higgsfield-SDK app UI (generation console, fnf-backed tool) | `references/app-layouts.md` + `references/quanta-design.md` + `references/fnf-sdk.md` + `references/fnf-react.md` + `references/auth.md` (component gaps: `references/heroui-fallback.md`) |
-| Design self-review before delivery | `references/brand-review.md` — the 7-criteria Higgs taste rubric |
+| Higgsfield-SDK app UI (generation console, fnf-backed tool) | `references/app-layouts.md` + `references/quanta-design.md` + `references/fnf-sdk.md` + `references/fnf-react.md` + `references/auth.md` (component gaps: build from Quanta primitives) |
 | Cover / OG image ("cover", "обложка", "OG image", publish prep) | `references/app-cover.md` — branded 3:2 cover + capsule OG mask |
+| Cover video / "animate the cover" (`og_video_url`, permission-gated) | `references/cover-animator.md` — ~5s end-frame reveal via `seedance_2_0` |
+| App contest ("enter the contest", "$100k contest", `higgsfield website contest`) | `references/contest.md` — entry auto-publishes; submit with social links |
 | Auth, current user, login/logout, `/api/user`, `__auth` routes | `references/auth.md` + `references/runtime-and-infra.md` |
 | TanStack Start routes, SSR, server functions, Cloudflare Worker runtime | `references/runtime-and-infra.md` |
 | Heavy / long-running work (ffmpeg, headless browser, background jobs), containers | `references/containers.md` |
-| Security: Worker hardening, OWASP audit, threat modeling | `references/security.md` |
 
 Do NOT search the skill library for other design guidance — everything is here.
 
@@ -139,8 +186,8 @@ asks to patch a package snapshot. Template-owned infrastructure lives in
 
 ### 0b. Supercomputer Design mode inspector
 
-Generated apps support a Higgsfield design inspector bridge for editable
-Supercomputer previews. The split is strict:
+Generated apps support a Higgsfield design inspector bridge for editing in
+Supercomputer Design mode. The split is strict:
 
 - The Higgsfield editor (parent window) owns the iframe UI, hover overlay,
   edit popover, origin/session checks, and edit prompt submission.
@@ -149,11 +196,14 @@ Supercomputer previews. The split is strict:
 - Agents never manually implement inspector code, refs, source markers, or
   `data-hf-*` attributes.
 
-Required scripts: `bun run build` (production-clean), `bun run build:design`
-(editable preview, `HF_DESIGN_INSPECTOR=1`), `bun run dev:design`. Deploy the
-editable **preview** only (`higgsfield website deploy <website_id> --env
-preview`); never rewrite the normal `build` to include the inspector, and never
-ship inspector metadata in production.
+Local scripts: `bun run build` (inspector-free by default; set
+`HF_DESIGN_INSPECTOR=1` in the env for the inspector-enabled build) and
+`bun run dev:design` — for LOCAL work only. The platform CI sets
+`HF_DESIGN_INSPECTOR=1` on every deploy build, so the live deployed site always
+carries the inspector and IS the surface Supercomputer Design mode opens. There
+is ONE deploy (`higgsfield website deploy <website_id>`) and it ships the live
+public site immediately; never hard-code `HF_DESIGN_INSPECTOR=1` into the
+`build` script or hand-edit the build scripts to toggle the inspector.
 
 ### 1. SSR-safe rendering
 Every route renders on the server per request. NEVER touch browser-only
@@ -184,13 +234,13 @@ SDK operation. Do not invent your own login UI, email/password form, or token
 handling, and do not build anonymous generation flows unless the user
 EXPLICITLY asks for an offline/mock demo.
 
-**Preview sign-in is platform-owned — do NOT improvise a cause if it fails.**
-`/__auth/login` is a platform-injected route that hands off to Higgsfield's
-auth service, then redirects back to `return` so `/api/user` succeeds. If a
-user reports sign-in failing on a PREVIEW, FIRST confirm the app side is
-correct (links to `/__auth/login?return=<path>`, proxies `/api/user`
-unchanged); if it is, the failure is on the platform/auth side — say so
-plainly instead of inventing an app-code cause.
+**Sign-in on the deployed site is platform-owned — do NOT improvise a cause if
+it fails.** `/__auth/login` is a platform-injected route that hands off to
+Higgsfield's auth service, then redirects back to `return` so `/api/user`
+succeeds. If a user reports sign-in failing on a DEPLOYED SITE, FIRST confirm
+the app side is correct (links to `/__auth/login?return=<path>`, proxies
+`/api/user` unchanged); if it is, the failure is on the platform/auth side —
+say so plainly instead of inventing an app-code cause.
 
 If the app also needs its own user accounts (e.g. team members of the app's
 customers), keep that separate — never replace Higgsfield auth with app-local
@@ -254,13 +304,14 @@ declared in `app/app.manifest.json`, so the typed accessors are optional —
 guard before use. Do not thread `env` through React props or read it at
 module top level.
 
-### 5. Opted-in storage is SHARED — preview data == prod data
-If you opt into D1, R2, or KV, each is a SINGLE instance **shared by the
-preview and prod deploys**. Only the CODE is split (`vars.HF_ENV`). The DATA
-is not. `env.HF_ENV` tells you which env it is; it CANNOT switch the
-database/bucket. A destructive migration you run "just to test on preview"
-hits **production data**. Prefer additive migrations
-(`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN`).
+### 5. Opted-in storage is LIVE — one deploy, one database
+If you opt into D1, R2, or KV, each is a SINGLE instance backing the ONE live
+deploy. There is no staging copy: every migration and data change hits **live
+production data** directly. `env.HF_ENV` is always `"production"` on deployed
+builds; there is no separate database/bucket to test against. A destructive
+migration you run "just to test" destroys **production data**. Prefer additive
+migrations (`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN`), and get explicit user
+approval before any destructive change.
 
 ### 6. `app/app.manifest.json` declares infra — NOTHING is provisioned by default
 A new app gets **no D1, no R2, no KV, no Durable Object**. Opt in only when
@@ -284,30 +335,33 @@ Durable Object for strong consistency.
 - Components → Quanta components first (`@higgsfield/quanta/*` — Button,
   Input, Textarea, Dropdown, Modal, Tabs, Sidebar, Chip, …), app-local
   composition in `app/src/components/**`; layout per
-  `references/app-layouts.md`; HeroUI for gaps.
+  `references/app-layouts.md`; gaps → your own component from Quanta primitives.
 - Generation result UI → compose from Quanta `Media`/`Card` +
   `app/src/lib/higgsfield-generation-results.ts`.
-- Styles / theme → `app/src/styles.css` (Tailwind v4 + Quanta + HeroUI wiring —
-  leave it alone). Quanta's `q-` tokens ARE the theme; the app is permanently
-  dark.
+- Styles / theme → `app/src/styles.css` (Tailwind v4 + Quanta wiring).
+  Quanta's `q-` tokens ARE the theme; the app is permanently dark.
 - D1 schema → `app/migrations/000N_*.sql` (additive; see rule 5).
 
-## Verify + deploy
+## Deploy
 
-The trusted platform CI builds the app on **every deploy** (preview →
-`bun run build:design`, production → `bun run build`), so a deploy already
-gives you the authoritative build result. The sandbox cannot deploy/migrate;
-the trusted platform CI does that.
+The trusted platform CI builds the app on **every deploy** (always with
+`HF_DESIGN_INSPECTOR=1` and `HF_ENV="production"` — the live site carries the
+design inspector), so a deploy already gives you the authoritative build
+result. The sandbox cannot deploy/migrate; the trusted platform CI does that.
 
-**Default: build, pass the gates (`bun run typecheck`,
-`bun run qa:fill -- --strict`), deploy the preview**
-(`higgsfield website deploy <website_id> --env preview`), then the brand-review
-screenshot self-check. Never deploy production unless the user explicitly asked
-to publish.
+**Default: deploy** — `higgsfield website deploy <website_id>` builds via CI and
+ships the live site immediately. You don't have to lint, build, or typecheck
+locally unless you think it's necessary (e.g. to debug); just make sure you
+pushed your changes to the remote repository before deploying. Never publish/list
+on the community feed unless the user explicitly asked to publish.
 
 **Publishing ("show in feed").** When the user asks to publish / share / put
-the app on the feed, run `higgsfield website publish <website_id>` — it deploys
-the pushed `main` to PRODUCTION and lists the app on the Higgsfield community feed.
+the app on the feed, run `higgsfield website publish <website_id>` — it lists
+the app on the Higgsfield community feed. **Publishing no longer deploys**: it
+lists whatever is already live, so run `higgsfield website deploy <website_id>`
+FIRST — and after ANY later change, deploy again to ship it (re-publishing does
+not re-deploy and won't pick up un-deployed changes). Never list the app on the
+community feed unless the user explicitly asked to publish.
 
 **HARD GATE — the cover is NOT optional. Running `higgsfield website publish` while
 `og_image_url` or `marketplace_cover_url` is empty is a BROKEN publish** (the
@@ -317,7 +371,9 @@ sequence is: (a) READ `app/src/app-meta.json`; (b) if `og_image_url` or
 `marketplace_cover_url` is empty → STOP, read `references/app-cover.md` and
 generate + upload the cover NOW — do not skip this because the user "only asked
 to publish", the cover IS part of publishing; (c) fill ALL fields below with
-real values (never placeholders); (d) commit + push; (e) only then run
+real values (never placeholders); (d) commit + push; (e) run
+`higgsfield website deploy <website_id>` to ship the pushed changes (publish no
+longer deploys — it lists what's already live); (f) only then run
 `higgsfield website publish`:
 
 1. `og_title` — the card's title (also the browser tab title).
@@ -331,33 +387,39 @@ real values (never placeholders); (d) commit + push; (e) only then run
    with `higgsfield upload create`. One generation fills both this and
    `og_image_url` — there is never a reason to have one without the other.
 5. `favicon_url` — the card's logo/icon (generate one if none exists yet).
-6. `og_video_url` — the **cover video**, OPTIONAL and permission-gated: OFFER
-   it to the user ("want a short cover video for the feed card?") and ASK
-   PERMISSION FIRST — generating a video costs credits; never generate it
-   unprompted. If they say yes, follow "Cover video" in `references/seo.md`.
+6. `og_video_url` — the **cover video**, OPTIONAL and permission-gated: ALWAYS
+   SUGGEST it (offer it every time — "want a short cover video for the feed
+   card? it plays on hover"), but ASK PERMISSION FIRST — generating a video
+   costs credits; never generate it unprompted. If they say yes, follow
+   `references/cover-animator.md` (the ~5s end-frame reveal of the launch cover
+   via `seedance_2_0`).
 
 (1–5 are generated without asking — they are part of the publish, not a
 separate credit decision; only the cover VIDEO (6) needs permission.)
 
-`higgsfield website deploy <website_id> --env production` remains the way to ship
-to production WITHOUT a feed listing.
+`higgsfield website deploy <website_id>` remains the way to ship the live site
+WITHOUT a feed listing.
+
+**Entering the app contest.** If the user asks to enter the app in the
+Higgsfield contest ("enter the contest", "submit to the $100k contest"), run
+`higgsfield website contest <website_id> --url <link>` — an unpublished app is
+published automatically by the entry (it just needs a live prod deploy, and
+fill the page metadata FIRST — the auto-published listing renders from it), so
+there's no separate publish step. The submission needs one or more public
+social-media links (Instagram / TikTok / YouTube / X) with the app link and
+`#HiggsfieldApp` — the user posts those themselves, so ask for the URL(s). Full
+rules, prizes, and how the contest shapes the build are in
+`references/contest.md`.
 
 **Run the local checks only when you actually need them** — from `app/`:
 ```bash
 cd app
 bun install          # only when you changed dependencies / package.json
-bun run typecheck    # tsc --noEmit
-bun run build        # production-clean build
-bun run build:design # editable Supercomputer preview build
+bun run typecheck    # tsc --noEmit — only to chase a type error on deploy
+bun run build        # local build — only to chase a build error on deploy
 ```
 
-**Small edits to an existing app** (copy tweak, one component, styling fix):
-make the edit, run `bun run qa:fill -- --strict`, deploy the preview. Re-run
-the brand-review screenshot check only when the edit changed layout/visual
-structure — not for a typo fix.
+**Adding a dependency: `bun add`.**
 
-**Before claiming a build done / deploying, no placeholders may remain.** Run
-`bun run qa:fill -- --strict` (add `--url <preview>` to also scan the rendered
-page). It fails if any template placeholder survives — a `<...>`-style token,
-`lorem ipsum`, or the scaffold blank-page marker (`REMOVE_THIS` /
-`blank-app-v1`). It is a completion gate, not a CI build step.
+**Small edits to an existing app** (copy tweak, one component, styling fix):
+make the edit, deploy.
