@@ -71,7 +71,8 @@ For prompts like "create a Nano Banana generation app", "build a Seedance form",
   `/__auth/login?return=<current path>`.
 - Logout action to `/__auth/logout?return=/`.
 - Server-side auth guard before every SDK submit, upload, cost, feed, profile,
-  credits, and workspace operation.
+  credits, workspace, Elements, character-training, realtime edit/finalize,
+  and saved-style operation.
 - Profile tab/panel showing safe user fields, current workspace, and display
   credits from profile APIs.
 - Model form with validated settings for the requested model.
@@ -99,6 +100,10 @@ For prompts like "create a Nano Banana generation app", "build a Seedance form",
   `getJobPhase`, `hasResult`, `isTerminalJobStatus`).
 - Show prompt, model, status, created time, and failure reason where available.
   Do not render completed jobs as blank cards with only status/id text.
+- Keep one truthful export-format contract for every media type. Preserve and
+  label provider-native output, or carry a supported model format field through
+  preview, confirmation, submit, and download. Never fake PNG/JPEG/WebP
+  consistency by renaming a URL or filename.
 - Request/debug logs on server SDK routes: method, logical operation/path,
   response status, SDK error code/status/message. Never log prompts, raw params,
   headers, tokens, cookies, upload URLs, filenames, emails, workspace names, or
@@ -107,6 +112,194 @@ For prompts like "create a Nano Banana generation app", "build a Seedance form",
 Omission is a bug. The ONLY exception is when the user EXPLICITLY asks for an
 offline/mock demo (memory adapters, no network) — never choose a mock as the
 default; the default is a real, end-to-end app with a real backend and D1.
+
+## Output and download format contract
+
+Choose the app's public export behavior once and apply it to every submit and
+download path:
+
+- If the registered model's documented schema exposes an output-format field,
+  offer only its supported values, choose one app default, and carry that field
+  in the same canonical SDK input used by `getWirePreview`, confirmation, and
+  submit. Do not invent a universal `outputFormat` key; use the exact current
+  job-schema field.
+- Treat optimized previews as display derivatives only. `getPreviewUrl()` may
+  legitimately resolve to WebP or another optimized encoding even when the
+  raw/export asset is PNG or JPEG. Use `getRawUrl()` for open/download, or the
+  URL of bytes the app genuinely transcoded server-side.
+- Make bytes, MIME type, and filename agree. Derive the extension and
+  `Content-Type` from trusted result metadata or the fetched raw response; a
+  download proxy must forward/set matching `Content-Type` and
+  `Content-Disposition`. Never save WebP bytes under `.png`, or infer format
+  from the preview URL's suffix.
+- If the product promises a fixed format that the model cannot guarantee,
+  transcode the raw bytes in a real server-side path that supports the codec
+  (a container when Worker-native capabilities are insufficient). If that path
+  is not built, label and preserve the provider-native format instead of
+  advertising a false fixed format.
+
+For protected app-local downloads inside the Higgsfield iframe, also follow
+`references/auth.md` → "Authenticated File Downloads". A direct raw link is
+valid only when it is public or a self-contained signed URL requiring no
+session.
+
+## Elements and custom-reference character training
+
+Use these capabilities when an app needs reusable user assets or a consistent
+trained subject. Keep the concepts distinct:
+
+- **Elements** are the signed-in user's reusable asset library. A Character is
+  one kind of Element. Browse Elements with `createReferenceClient` from
+  `@higgsfield/fnf/references`; do not call them all characters and do not
+  invent app-local copies of the library.
+- **Character training** is a separate multi-image custom-reference operation.
+  Use `createCharacterClient` from `@higgsfield/fnf/characters`. Training
+  creates a processing Character Element and returns a custom-reference id.
+- **Generation** uses that custom-reference id as
+  `settings.customReferenceId` on a compatible Soul job. Presets are not part
+  of this flow.
+
+All calls stay server-side after the Higgsfield auth guard and reuse the same
+`createWorkflowPlatformAdapter({ baseUrl: 'https://fnf.internal' })`:
+
+```ts
+import { createCharacterClient } from '@higgsfield/fnf/characters'
+import { createJobClient } from '@higgsfield/fnf/client'
+import { soulV2Image } from '@higgsfield/fnf/jobs'
+import { createReferenceClient } from '@higgsfield/fnf/references'
+import { createWorkflowPlatformAdapter } from '@higgsfield/fnf/workflow-platform'
+
+const adapter = createWorkflowPlatformAdapter({
+  baseUrl: 'https://fnf.internal',
+  confirm: async () => confirmationToken,
+})
+
+const elements = createReferenceClient({ adapter })
+const characters = createCharacterClient({ adapter })
+const jobs = createJobClient({ adapter, jobs: [soulV2Image] })
+
+const library = await elements.list({ category: 'character', size: 50 })
+
+// images are MediaRef values returned by media.upload(...) or compatible
+// image job refs. Upload browser Files with multipart FormData first.
+const pending = await characters.create({
+  name: 'My character',
+  type: 'soul_2',
+  images,
+})
+const character = await characters.wait(pending)
+if (character.status === 'failed')
+  throw new Error(character.failReason ?? 'Character training failed')
+
+const result = await jobs.submit({
+  model: 'text2image_soul_v2',
+  prompt: { instruction: 'Candid flash photo at a late-night diner' },
+  settings: {
+    customReferenceId: character.id,
+    aspectRatio: '3:4',
+    batchSize: 4,
+  },
+})
+```
+
+Character contract:
+
+- Supported training types are `soul`, `soul_2` (default), and
+  `soul_cinematic`. Expose the requested types; do not hard-code a
+  `/soul-v2` transport or reimplement one backend variant.
+- Training accepts 1–100 image references. `soul` accepts uploaded
+  `media_input` refs only; `soul_2` and `soul_cinematic` also accept
+  compatible image job refs whose type ends in `_job`.
+- Poll `characters.get(id)` or `characters.wait(character)` until
+  `completed` or `failed`. On completion, refresh the Elements list; the
+  result may also expose `elementId`.
+- Existing Character Elements expose `reference.characterId`; use that value
+  as `customReferenceId`. The Element id and custom-reference character id
+  are different ids.
+- `references.list({ cursor, size, category })`,
+  `references.get(elementId)`, `characters.create(...)`, and
+  `characters.get(characterId)` are the public SDK operations. Never
+  hand-write `/reference-elements` or `/custom-references` fetches.
+- Do not add a custom per-image/per-job approval workaround around character
+  training. Reuse platform auth, upload, submission, and approval
+  infrastructure; the normal confirmation gate still applies to the Soul
+  generation submission.
+
+A complete Elements-and-character flow includes auth/profile/credits, an
+existing Elements picker, multipart multi-image upload, create + poll character
+states, Elements refresh, Soul generation using `customReferenceId`, the
+normal confirmation/cost flow, generation polling, and history/result
+rendering.
+
+## Stateful realtime image editing and saved custom styles
+
+Use the realtime client when an app needs successive image edits in one chain or
+user-level saved styles:
+
+```ts
+import {
+  buildRealtimeChainEditRequest,
+  createRealtimeClient,
+  type RealtimeChainEditInput,
+} from '@higgsfield/fnf/realtime'
+import { createWorkflowPlatformAdapter } from '@higgsfield/fnf/workflow-platform'
+
+const adapter = createWorkflowPlatformAdapter({ baseUrl: 'https://fnf.internal' })
+const realtime = createRealtimeClient({ adapter, jobAdapter: adapter })
+
+const input: RealtimeChainEditInput = {
+  params: {
+    prompt: 'Turn this into a candid editorial portrait',
+    resolution: '1k',
+    aspectRatio: '1:1',
+    images, // explicit MediaRef/image-job refs; at most four
+  },
+}
+const cost = await realtime.estimateChainCost({
+  resolution: input.params.resolution,
+  aspectRatio: input.params.aspectRatio,
+})
+// Browser: request approval for the exact validated wire.
+const wire = buildRealtimeChainEditRequest(input)
+const confirmationToken = await window.hf.requestGeneration(
+  'flux_klein_realtime',
+  wire,
+  { credits: cost.credits },
+)
+// Authenticated server function: submit the same input with its opaque token.
+const edit = await realtime.editChain(input, { confirmationToken })
+const generation = await realtime.pollEditJob(edit.jobId)
+
+// Continue by passing edit.chainId and a new explicit image set.
+await realtime.finalizeChain({ chainId: edit.chainId })
+```
+
+The confirmation call runs in the browser through
+`window.hf.requestGeneration`; the client creation, edit, polling, finalize,
+and style calls stay behind authenticated server functions. Send the opaque
+token and the exact same input to the server; never log it. If one action
+launches several independent edits, build every wire request first and use the
+existing batch confirmation form, matching returned tokens by index. Every
+`editChain` call is billable and intentionally not retried.
+
+Realtime contract:
+
+- Omit `chainId` to start; pass the returned `chainId` to continue. Previous
+  outputs are not appended automatically: every attempt supplies its own
+  `images` array of up to four uploaded `media_input` or image-job refs.
+- Provide exactly one of `prompt` or structured `settings`. Structured
+  settings may select a saved style with `style: 'custom'` and
+  `customStyleId`.
+- Use `getEditJob` / `pollEditJob` and normal `Generation` selectors to
+  render the result. Call `finalizeChain` when the editing session ends.
+- Saved styles are authenticated user-level data. Manage them only through
+  `listCustomStyles`, `createCustomStyle`, `updateCustomStyle`, and
+  `deleteCustomStyle`. A style reference `mediaId` must be an upload or job
+  the user/app may access; a listed Element's metadata is not a raw-media
+  picker.
+- Never hand-write `/realtime/*` requests or invent a separate approval
+  mechanism. Reuse the platform adapter, auth guard, multipart upload path, and
+  confirmation infrastructure.
 
 ## Common Imports
 
@@ -195,6 +388,11 @@ clients, and let `createWorkflowPlatformAdapter` send the correct operation:
 | job set get | `GET /jobs/sets/{id}` |
 | job list/feed | `GET /jobs?gen_type=...&size=...` |
 | media get/list | `GET /jobs/media/{id}` / `GET /jobs/media?...` |
+| Element get/list | `GET /reference-elements/{id}` / `GET /reference-elements?...` |
+| character train/read | `POST /custom-references` / `GET /custom-references/{id}` |
+| realtime edit/cost/finalize | `POST /realtime/chain/edit` / `POST /realtime/chain/cost` / `POST /realtime/chain/finalize` |
+| saved style list/create | `GET /realtime/custom-styles` / `POST /realtime/custom-styles` |
+| saved style update/delete | `PATCH /realtime/custom-styles/{id}` / `DELETE /realtime/custom-styles/{id}` |
 | profile user | `GET /user` |
 | workspace list/current/wallet | `GET /workspaces`, `/workspaces/current`, `/workspaces/wallet` |
 | workspace switch | `POST /workspaces/switch` |
@@ -402,6 +600,38 @@ export const generate = createServerFn({ method: 'POST' })
 
 Do not use `createServerFn({ method: "GET" })` or a `GET` server route for
 generation. Generation is a mutation even when the form has no uploaded file.
+
+## LLM chat / text — `createLlmClient` (NOT a job)
+
+Chat/text generation is separate from the media jobs registry. Worker-side
+ONLY, zero-token (no `getToken`/`userId` — the platform attaches the visitor's
+identity and bills their credits):
+
+```ts
+import { createLlmClient } from '@higgsfield/fnf'
+const llm = createLlmClient({ baseUrl: 'https://fnf.internal/llm' })
+
+const [model] = await llm.listModels()
+if (!model) throw new Error('No LLM models are currently available')
+
+const res = await llm.complete({
+  model,
+  messages: [{ role: 'user', content: '…' }],
+})
+// llm.stream(...) yields OpenAI-shape SSE deltas; tool-calling supported
+// (LlmToolDef / LlmToolCall). In React: FnfProvider's `llm` prop + useFnfLlmClient().
+```
+
+Model availability is runtime gateway configuration. Never hardcode a catalog
+or claim that one model is always available. Call `listModels()` server-side,
+use the exact returned id, and handle an empty list. Model pickers may receive
+those ids through an authenticated app-local server function or route; if a
+previously selected id disappears, refresh the list and show that it is no
+longer available instead of silently substituting another model.
+
+**App-only.** Text generation is generation → `type: "app"` (Sign in with
+Higgsfield, visitor credits). NEVER on a `type: "website"` build, and never a
+"bring your own LLM key" path.
 
 ## Submission Confirmation Gate
 

@@ -116,9 +116,17 @@ are rejected — if that happens, try a close variant.
    type, including its own references, hard rules, editing map, and
    deploy/publish gates:
 
+For every `--type website` build the intake ALWAYS asks the user to choose
+between an **Animated (recommended)** website — a scroll-driven, seam-locked
+camera journey through several generated scenes (`references/scroll-scrub.md`) —
+and a **Non-animated** one. This question is mandatory: never skip it, even when
+the request seems to imply a choice. Animated is the recommended default (used
+only when the user is unreachable / doesn't answer); the flow below carries both
+paths and the full pipeline.
+
 | Type | Flow |
 |---|---|
-| `--type website` | **`references/website-flow.md`** — phased pipeline: intake → concept → reference boards → asset system → build-to-boards → motion → cover + metadata → mechanical gate → deploy |
+| `--type website` | **`references/website-flow.md`** — phased pipeline (animated website by default): intake → concept → reference boards → asset system → build-to-boards → motion → cover + metadata → mechanical gate → deploy |
 | `--type app` | **`references/app-flow.md`** — the Quanta toolkit, the six code layouts, fnf SDK + auth + D1 contract, launch cover + metadata, publish gate |
 
 Both flows share the same platform mechanics (SSR Worker, `app.manifest.json`
@@ -193,7 +201,11 @@ unless a flow sends you there.
 `references/wow-maker.md`, `references/reference-boards.md`,
 `references/asset-system.md`, `references/image-to-code.md`,
 `references/design-taste-frontend.md`, `references/review-rubric.md`,
-`references/seo.md`.
+`references/seo.md`, `references/scroll-scrub.md` (A4 seam-locked journey),
+`references/scroll-scrub-asset-react.md`,
+`references/scroll-scrub-asset-css.md`, and
+`references/scroll-scrub-asset-video.md` (bundled Markdown code assets loaded
+only when A4 is selected).
 
 **App flow:** `references/app-quickstart.md` (START HERE — the working critical
 path: auth, generation submit/poll, result rendering, common Quanta components),
